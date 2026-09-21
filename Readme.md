@@ -17,7 +17,16 @@
 - 🧹 **日志自动清理**：内置自动打扫机制，始终保持 Actions 历史记录简洁不占空间。
 
 ---
+## 📌 最近更新日志 (Changelog)
 
+### 🛠️ 自动化逻辑深度重构 (`gaming4free.py`)
+- **解决 Cloudflare “假成功”提交问题**：
+  - 增加 Turnstile Token 长度校验（要求 `Token 长度 > 50`）。
+  - 彻底防止未通过人机验证时提取空凭证并误点击提交，导致服务端静默丢弃请求的问题。
+- **强化验证码识别与破解**：
+  - 优化 iframe 与 Shadow DOM 深度定位逻辑，增强对 Cloudflare Turnstile 验证框的点击穿透能力。
+- **多账号/服务器轮询间隔优化**：
+  - 多个服务器间的续期等待间隔由 60 秒调整为 **15 秒**，在兼顾防风控防刷机制的同时大幅提升 Actions 执行效率。
 ## ⚙️ Environment Secrets 配置指南
 
 请在 GitHub 仓库的 **Settings** -> **Secrets and variables** -> **Actions** -> **Repository secrets** 中添加以下变量：
