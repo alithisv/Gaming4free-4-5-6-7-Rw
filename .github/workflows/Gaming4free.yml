@@ -2,7 +2,7 @@ name: Gaming4free Auto Renew
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # 已修改：每 30 分钟自动运行一次
+    - cron: '0 * * * *'   # 已修改：每 1 小时（整点）自动运行一次
   repository_dispatch:
     types: [run-renew]     # 接收名为 run-renew 的外部信号
   workflow_dispatch:       # 保留 GitHub 页面上的手动触发按钮
