@@ -136,56 +136,41 @@ class Game4FreeRenewal:
                 time.sleep(15)  
                 
                 token = ""
-                for attempt in range(4):
-                    self.log(f"⚡ 尝试定位并物理破解 Cloudflare (尝试 {attempt+1}/4)...")
+                for attempt in range(5):
+                    self.log(f"⚡ 尝试定位并物理破解 Cloudflare (尝试 {attempt+1}/5)...")
                     
-                    cf_iframe = None
+                    try:
+                        sb.uc_gui_click_captcha()
+                    except Exception:
+                        pass
+
                     try:
                         iframes = sb.driver.find_elements("tag name", "iframe")
                         for f in iframes:
-                            src = f.get_attribute("src")
-                            if src and ("cloudflare" in src.lower() or "turnstile" in src.lower()):
-                                cf_iframe = f
+                            src = f.get_attribute("src") or ""
+                            if "cloudflare" in src.lower() or "turnstile" in src.lower() or "challenges" in src.lower():
+                                ac = ActionChains(sb.driver)
+                                ac.move_to_element(f).click().perform()
                                 break
                     except Exception as e:
-                        self.log(f"   -> ⚠️ 寻找 iframe 异常: {e}")
-
-                    if cf_iframe:
-                        size = cf_iframe.size
-                        width = size['width']
-                        self.log(f"   -> 🎯 锁定 iframe! 尺寸: {width}x{size['height']}")
-                        
-                        if width > 0:
-                            center_x_offset = int(-(width / 2) + 30)
-                            
-                            try:
-                                for offset in [center_x_offset - 15, center_x_offset, center_x_offset + 15]:
-                                    ac = ActionChains(sb.driver)
-                                    ac.move_to_element(cf_iframe).move_by_offset(offset, 0).click().perform()
-                                    time.sleep(0.5)
-                            except Exception as e:
-                                self.log(f"   -> 🖱️ 坐标点击异常: {e}")
-                        else:
-                            self.log("   -> ⚠️ iframe 宽度为 0，可能被隐藏。")
-                    else:
-                        self.log("   -> ⚠️ 未在页面中找到 Cloudflare iframe，尝试兜底盲点...")
-                        try: sb.uc_gui_click_captcha()
-                        except: pass
+                        self.log(f"   -> ⚠️ 寻找/点击 iframe 异常: {e}")
                     
-                    self.log("   -> ⏳ 等待验证回调 (6 秒)...")
-                    time.sleep(6)
+                    self.log("   -> ⏳ 等待验证回调 (5 秒)...")
+                    time.sleep(5)
                     
                     try:
-                        token = sb.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]') ? document.querySelector('[name=\"cf-turnstile-response\"]').value : ''")
-                    except:
-                        pass
-                        
-                    if token:
-                        self.log("✅ 成功！已获取到 Cloudflare 凭证。")
-                        break
+                        temp_token = sb.execute_script("return document.querySelector('[name=\"cf-turnstile-response\"]') ? document.querySelector('[name=\"cf-turnstile-response\"]').value : ''")
+                        if temp_token and len(temp_token.strip()) > 50:
+                            token = temp_token.strip()
+                            self.log(f"✅ 成功！获取到有效 Cloudflare 凭证 (Token 长度: {len(token)})")
+                            break
+                        else:
+                            self.log("   -> ⚠️ 未检测到有效 Token，继续尝试...")
+                    except Exception as e:
+                        self.log(f"   -> ⚠️ 读取 Token 异常: {e}")
                 
                 if not token:
-                    self.log("⚠️ 未确认凭证！")
+                    self.log("⚠️ 未能获取到有效的 Cloudflare 凭证，尝试直接点击提交...")
 
                 self.human_wait(2, 4)
 
@@ -229,7 +214,10 @@ class Game4FreeRenewal:
         if not SERVER_LIST:
             self.log("❌ 未配置 SERVERS")
             return
-        for server in SERVER_LIST:
+        for i, server in enumerate(SERVER_LIST):
+            if i > 0:
+                self.log("⏳ 为防止同 IP 被频繁请求限制，暂停 15 秒后继续下一个服务器...")
+                time.sleep(15)  # 已修改为 15 秒间隔
             self.run_single_server(server["num"], server["region"])
 
 if __name__ == "__main__":
